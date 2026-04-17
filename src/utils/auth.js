@@ -1,29 +1,20 @@
 // src/utils/auth.js
-// ─────────────────────────────────────────────
-// JWT simulation + Role-Based Access Control
-// In production: replace btoa/atob with real
-// jsonwebtoken library on your Express server
-// ─────────────────────────────────────────────
-
-/** Sign a JWT-style token for a user (base64 encoded payload) */
-export const signToken = (user) =>
-  btoa(JSON.stringify({ sub: user.id, role: user.role, exp: Date.now() + 3_600_000 }));
-
-/** Verify and decode a token. Returns null if invalid/expired. */
+// Client-side JWT decode + RBAC
 export const verifyToken = (token) => {
   try {
-    const payload = JSON.parse(atob(token));
-    if (payload.exp < Date.now()) return null; // token expired
+    const base64url = token.split(".")[1];
+    const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(base64).split("").map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")
+    );
+    const payload = JSON.parse(json);
+    if (payload.exp && payload.exp * 1000 < Date.now()) return null;
     return payload;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 };
 
-// ─────────────────────────────────────────────
-// RBAC Permission Matrix
-// Actions: "r" = read, "w" = write, "d" = delete
-// ─────────────────────────────────────────────
+export const signToken = () => null;
+
 const PERMISSIONS = {
   Admin:        { patients: ["r","w","d"], appointments: ["r","w","d"], doctors: ["r","w","d"], billing: ["r","w","d"] },
   Doctor:       { patients: ["r","w"],     appointments: ["r","w"],     doctors: ["r"],         billing: ["r"]         },
@@ -31,11 +22,5 @@ const PERMISSIONS = {
   Patient:      { patients: ["r"],         appointments: ["r","w"],     doctors: ["r"],         billing: ["r"]         },
 };
 
-/**
- * Check if a role has permission to perform an action on a resource.
- * @param {string} role      - "Admin" | "Doctor" | "Receptionist" | "Patient"
- * @param {string} resource  - "patients" | "appointments" | "doctors" | "billing"
- * @param {string} action    - "r" | "w" | "d"
- */
 export const hasPermission = (role, resource, action) =>
   PERMISSIONS[role]?.[resource]?.includes(action) ?? false;
