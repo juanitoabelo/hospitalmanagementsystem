@@ -1,0 +1,4 @@
+# MediCore HMS — robots.txt
+# Disallow all crawlers (internal hospital system)
+User-agent: *
+Disallow: /
