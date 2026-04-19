@@ -60,9 +60,13 @@ export default function Login({ onLogin }) {
         </div>
 
         <div style={{ marginTop: 16, padding: 12, background: "#F8FAFC", borderRadius: 8, border: `1px solid ${colors.border}` }}>
-          <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: colors.textMuted }}>First time? Run the seed script:</p>
-          <code style={{ fontSize: 11, color: colors.text }}>cd backend && node seed.js</code>
-          <p style={{ margin: "6px 0 0", fontSize: 11, color: colors.textMuted }}>Then login with <strong>admin@medicore.com</strong> / <strong>Admin1234!</strong></p>
+          <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: colors.textMuted }}>Demo Credentials:</p>
+          <div style={{ fontSize: 11, color: colors.text }}>
+            <p style={{ margin: "0 0 2px" }}><strong>Admin:</strong> admin@medicore.com / Admin1234!</p>
+            <p style={{ margin: "0 0 2px" }}><strong>Doctor:</strong> sarah@medicore.com / Doctor123!</p>
+            <p style={{ margin: "0 0 2px" }}><strong>Receptionist:</strong> reception@medicore.com / Reception123!</p>
+            <p style={{ margin: "0" }}><strong>Patient:</strong> patient@medicore.com / Patient123!</p>
+          </div>
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@
 const router  = require("express").Router();
 const bcrypt  = require("bcryptjs");
 const jwt     = require("jsonwebtoken");
-const { User } = require("../models/models");
+const mongoose = require("mongoose");
 const { protect } = require("../middleware/authMiddleware");
 
 const JWT_SECRET  = process.env.JWT_SECRET  || "medicore-dev-secret-change-in-production";
@@ -15,6 +15,24 @@ const JWT_EXPIRES = process.env.JWT_EXPIRES || "1h";
 
 const issueToken = (user) =>
   jwt.sign({ sub: user._id, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+
+// Get MongoDB client (reuse existing connection if available)
+let mongoClient = null;
+async function getMongoClient() {
+  if (mongoClient) return mongoClient;
+  mongoClient = new MongoClient(process.env.MONGO_URI, {
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 60000,
+    maxPoolSize: 5,
+    minPoolSize: 1,
+    maxIdleTimeMS: 30000,
+    family: 4,
+    tls: true,
+    tlsAllowInvalidCertificates: true,
+  });
+  await mongoClient.connect();
+  return mongoClient;
+}
 
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
@@ -37,7 +55,14 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+
+    // Use the existing MongoDB connection from the main app
+    const db = mongoose.connection.db;
+    if (!db) {
+      return res.status(500).json({ message: "Database connection not available" });
+    }
+
+    const user = await db.collection('users').findOne({ email });
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
     const valid = await bcrypt.compare(password, user.passwordHash);
@@ -45,6 +70,7 @@ router.post("/login", async (req, res) => {
 
     res.json({ token: issueToken(user), user: { id: user._id, name: user.name, email: user.email, role: user.role } });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ message: err.message });
   }
 });
